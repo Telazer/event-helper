@@ -2,9 +2,9 @@
 
 [![GitHub](https://img.shields.io/badge/GitHub-Repository-blue)](https://github.com/Telazer/event-helper)
 
-For more helpers and utilities, check out [Telazer NPM Page](https://www.npmjs.com/org/telazer)
+For more helpers and utilities, check out the [Telazer NPM Page](https://www.npmjs.com/org/telazer)
 
-A typescript utility library for creating and managing custom event handlers.
+A TypeScript utility library for creating and managing custom event handlers.
 
 ---
 
@@ -20,7 +20,7 @@ npm install @telazer/event-helper
 
 - Create and manage custom events with type-safe data passing
 - Flexible event handling with callback, ID, and group-based subscriptions
-- Singleton pattern implementation for global event management using static class
+- Singleton pattern implementation for global event management using a static class
 - Efficient app-wide communication and state management
 - Granular control over event listener removal (by callback, name, ID, or group)
 - Precise event dispatching with filtered subscriber targeting
@@ -29,7 +29,7 @@ npm install @telazer/event-helper
 
 ## Usage
 
-Import `EventHelper`
+Import `EventHelper`:
 
 ```ts
 import EventHelper from "@telazer/event-helper";
@@ -73,7 +73,7 @@ EventHelper.on<IEventData>({
 });
 ```
 
-### Stop listening (OFF)
+### Stop Listening (OFF)
 
 ```ts
 // Stop all listeners for `state_change`
@@ -103,19 +103,20 @@ EventHelper.on({
   },
 });
 
-// Stop the listener 1 by passing the callbackFc instance
+// Stop listener 1 by passing the callbackFc instance
 EventHelper.off({ callback: callbackFc });
 
-// Listener 2 still active
+// Listener 2 is still active
 ```
 
 ### Using ID as matcher
 
-```ts
+> Note: Using `id` will override the previous listener with the same `eventName` and `id`.
 
+```ts
 // Listener 1
 EventHelper.on({
-	id: 'listener1'
+  id: "listener1",
   eventName: "state_change",
   callback: () => {
     console.log("state_change triggered from listener1");
@@ -124,26 +125,25 @@ EventHelper.on({
 
 // Listener 2
 EventHelper.on({
-	id:'listener2',
+  id: "listener2",
   eventName: "state_change",
   callback: () => {
     console.log("state_change triggered from listener2");
   },
 });
 
-// Stop the listener 1 by passing the id
-EventHelper.off({ id: 'listener1' });
+// Stop listener 1 by passing the ID
+EventHelper.off({ id: "listener1" });
 
-// Listener 2 still active
+// Listener 2 is still active
 ```
 
 ### Grouping
 
 ```ts
-
 // Listener 1
 EventHelper.on({
-	group: 'group1'
+  group: "group1",
   eventName: "state_change",
   callback: () => {
     console.log("state_change triggered from group1");
@@ -151,7 +151,7 @@ EventHelper.on({
 });
 // Listener 2
 EventHelper.on({
-	group: 'group1'
+  group: "group1",
   eventName: "state_change",
   callback: () => {
     console.log("state_change triggered from group1");
@@ -159,17 +159,17 @@ EventHelper.on({
 });
 // Listener 3
 EventHelper.on({
-	group: 'group2',
+  group: "group2",
   eventName: "state_change",
   callback: () => {
     console.log("state_change triggered from group2");
   },
 });
 
-// Stop the listener 1 and 2 by passing the group name
-EventHelper.off({ group: 'group1' });
+// Stop listeners 1 and 2 by passing the group name
+EventHelper.off({ group: "group1" });
 
-// Listener 3 still active
+// Listener 3 is still active
 ```
 
 ### Stop all, yes ALL
@@ -184,13 +184,13 @@ EventHelper.off();
 ## Development
 
 ```bash
-# Clone the repo and
+# Clone the repo
 git clone https://github.com/Telazer/event-helper
 
 # Install dependencies
 npm install
 
-# Start the watcher for the development
+# Start the watcher for development
 npm run watch
 
 # Build the library
