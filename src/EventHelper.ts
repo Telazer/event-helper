@@ -74,7 +74,6 @@ export class EventHelper<T> {
       return event;
     }
   }
-
   static off<T>(props?: EventProps<T>) {
     if (!props) {
       EventHelper.events = {};
@@ -106,6 +105,14 @@ export class EventHelper<T> {
       });
     } else {
       EventHelper.events[eventName].callbacksList = [];
+    }
+
+    EventHelper.events[eventName].callbacksList = EventHelper.events[
+      eventName
+    ].callbacksList.filter((cb) => cb.callbacks.length > 0);
+
+    if (EventHelper.events[eventName].callbacksList.length === 0) {
+      delete EventHelper.events[eventName];
     }
   }
 
