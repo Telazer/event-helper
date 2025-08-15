@@ -19,11 +19,12 @@ npm install @telazer/event-helper
 ## Key Features
 
 - Create and manage custom events with type-safe data passing.
-- Flexible event handling with **callback**, **ID**, and **group**-based subscriptions.
+- Flexible event handling with callback, ID, and group-based subscriptions.
 - Singleton pattern implementation for global event management using a static class.
 - Efficient app-wide communication and state management.
-- Granular control over event listener removal (by callback, name, ID, or group).
-- Precise event dispatching with filtered subscriber targeting.
+- Granular control over event listener removal by callback, name, ID, or group.
+- Precise subscriber targeting with `observe` keys via `trigger`.
+- Backward compatible with `dispatch` while you migrate.
 
 ---
 
@@ -37,13 +38,39 @@ import EventHelper from "@telazer/event-helper";
 
 ---
 
-### Dispatching
+### Targeted Triggering with `observe`
 
 ```ts
-button.onClick = () => {
-  EventHelper.dispatch("state_change");
-};
+// subscribe to only "gold" changes
+EventHelper.on({
+  eventName: "ITEM_CHANGE",
+  observe: ["gold"],
+  callback: (data) => {
+    console.log("gold changed:", data);
+  },
+});
+
+// subscribe to only "diamond" changes
+EventHelper.on({
+  eventName: "ITEM_CHANGE",
+  observe: ["diamond"],
+  callback: (data) => {
+    console.log("diamond changed:", data);
+  },
+});
+
+// emit only for "gold" observers
+EventHelper.trigger({
+  eventName: "ITEM_CHANGE",
+  observe: ["gold"],
+  data: { amount: 5 },
+});
 ```
+
+Notes:
+
+- If a subscriber does not provide `observe`, it will be called by `trigger` for compatibility.
+- If `trigger` is called without `observe`, it behaves like `dispatch` and calls all subscribers of that event.
 
 ---
 
@@ -67,9 +94,10 @@ interface IEventData {
   foo: string;
 }
 
-button.onClick = () => {
-  EventHelper.dispatch<IEventData>("state_change", { foo: "bar" });
-};
+EventHelper.trigger<IEventData>({
+  eventName: "state_change",
+  data: { foo: "bar" },
+});
 
 EventHelper.on<IEventData>({
   eventName: "state_change",
@@ -81,23 +109,11 @@ EventHelper.on<IEventData>({
 
 ---
 
-### Stop Listening (OFF)
-
-```ts
-// Stop all listeners for `state_change`
-EventHelper.off({
-  eventName: "state_change",
-});
-```
-
----
-
 ### Using Callback as Matcher
 
 ```ts
-// Listener 1
 const callbackFc = () => {
-  console.log("state_change triggered from listener1");
+  console.log("state_change from listener1");
 };
 
 EventHelper.on({
@@ -105,54 +121,44 @@ EventHelper.on({
   callback: callbackFc,
 });
 
-// Listener 2
 EventHelper.on({
   eventName: "state_change",
   callback: () => {
-    console.log("state_change triggered from listener2");
+    console.log("state_change from listener2");
   },
 });
 
-// Stop listener 1 by passing its callback reference
-EventHelper.off({ callback: callbackFc });
+// remove listener 1 by its callback reference
+EventHelper.off({ eventName: "state_change", callback: callbackFc });
 
-// Listener 2 is still active
+// listener 2 is still active
 ```
 
 ---
 
 ### Using ID as Matcher
 
-> **Important:**
+> Important:
 >
 > - Using `id` will replace the previous listener with the same `eventName` and `id`.
-> - **When calling `off()` with `id`, you must also provide `eventName`.**
->   If you call `off({ id: "someId" })` without `eventName`, **all events will be removed**.
+> - When calling `off()` with `id`, you must also provide `eventName`.
+>   If you call `off({ id: "someId" })` without `eventName`, all events will be removed.
 
 ```ts
-// Listener 1
 EventHelper.on({
   id: "listener1",
   eventName: "state_change",
-  callback: () => {
-    console.log("state_change triggered from listener1");
-  },
+  callback: () => console.log("from listener1"),
 });
 
-// Listener 2
 EventHelper.on({
   id: "listener2",
   eventName: "state_change",
-  callback: () => {
-    console.log("state_change triggered from listener2");
-  },
+  callback: () => console.log("from listener2"),
 });
 
-// Correct: removes only listener 1
+// remove only listener1
 EventHelper.off({ eventName: "state_change", id: "listener1" });
-
-// Incorrect: removes ALL events
-EventHelper.off({ id: "listener1" });
 ```
 
 ---
@@ -160,37 +166,26 @@ EventHelper.off({ id: "listener1" });
 ### Grouping
 
 ```ts
-// Listener 1
 EventHelper.on({
   group: "group1",
   eventName: "state_change",
-  callback: () => {
-    console.log("state_change triggered from group1");
-  },
+  callback: () => console.log("group1 a"),
 });
 
-// Listener 2
 EventHelper.on({
   group: "group1",
   eventName: "state_change",
-  callback: () => {
-    console.log("state_change triggered from group1");
-  },
+  callback: () => console.log("group1 b"),
 });
 
-// Listener 3
 EventHelper.on({
   group: "group2",
   eventName: "state_change",
-  callback: () => {
-    console.log("state_change triggered from group2");
-  },
+  callback: () => console.log("group2 a"),
 });
 
-// Stop all listeners in group1 (listeners 1 and 2)
-EventHelper.off({ group: "group1" });
-
-// Listener 3 is still active
+// stop all listeners in group1
+EventHelper.off({ eventName: "state_change", group: "group1" });
 ```
 
 ---
@@ -198,9 +193,54 @@ EventHelper.off({ group: "group1" });
 ### Stop All Listeners
 
 ```ts
-// Stop ALL listeners for ALL events
+// stop ALL listeners for ALL events
 EventHelper.off();
 ```
+
+---
+
+## Deprecation Notice
+
+- `dispatch(eventName, data?)` is deprecated. Use `trigger({ eventName, data, observe? })`.
+- The static event registry remains for backward compatibility. New code should use `trigger` and `observe` for precise targeting.
+
+---
+
+## Migration Guide
+
+Replace:
+
+```ts
+EventHelper.dispatch("ITEM_CHANGE", payload);
+```
+
+With:
+
+```ts
+EventHelper.trigger({ eventName: "ITEM_CHANGE", data: payload });
+```
+
+If you only want certain subscribers:
+
+```ts
+EventHelper.trigger({
+  eventName: "ITEM_CHANGE",
+  observe: ["gold", "diamond"],
+  data: payload,
+});
+```
+
+Subscribers can opt in:
+
+```ts
+EventHelper.on({
+  eventName: "ITEM_CHANGE",
+  observe: ["gold"],
+  callback: onGoldChange,
+});
+```
+
+If a subscriber omits `observe`, it will still be called by `trigger` for compatibility. To fully opt in to targeted calls, always provide `observe`.
 
 ---
 
